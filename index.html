@@ -1,0 +1,229 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <canvas id="main" width="1200" height="600"></canvas><br>
+        Fourier Number: <input id="fourier_number" type="range" min="1" max="21" step="2" value="1" /><br>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Fourier_series_square_wave_circles_animation.gif">
+        <script>
+            var pausedTime = null;
+            var resumeTimeOffset = null;
+            if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
+                hidden = "hidden";
+                visibilityChange = "visibilitychange";
+            } else if (typeof document.mozHidden !== "undefined") {
+                hidden = "mozHidden";
+                visibilityChange = "mozvisibilitychange";
+            } else if (typeof document.msHidden !== "undefined") {
+                hidden = "msHidden";
+                visibilityChange = "msvisibilitychange";
+            } else if (typeof document.webkitHidden !== "undefined") {
+                hidden = "webkitHidden";
+                visibilityChange = "webkitvisibilitychange";
+            }
+            
+            var pauseKey = false;
+            document.addEventListener("keydown", function(event) {
+                if(event.keyCode === 80) {
+                    pauseKey = !pauseKey;
+                    setPause(pauseKey);
+                    if(!pauseKey) {
+                        update();
+                    }
+                }
+            });
+            // document.addEventListener("keyup", function(event) {
+            //     if(event.keyCode === 80) {
+            //         setPause(false);
+            //     }
+            // });
+
+            // If the page is hidden, pause the video;
+            // if the page is shown, play the video
+            function handleVisibilityChange() {
+                if (document[hidden]) {
+                    setPause(true);
+                } else {
+                    setPause(false);
+                }
+            }
+            
+            function setPause(value) {
+                if(value) {
+                    pausedTime = new Date().getTime();
+                } else {
+                    if(resumeTimeOffset === null) {
+                        resumeTimeOffset = 0;
+                    }
+                    resumeTimeOffset += (new Date().getTime()) - pausedTime;
+                    pausedTime = null;
+                }
+            }
+            
+
+            // Warn if the browser doesn't support addEventListener or the Page Visibility API
+            if (typeof document.addEventListener === "undefined" || 
+            typeof document[hidden] === "undefined") {
+            alert("This demo requires a browser, such as Google Chrome or Firefox, that supports the Page Visibility API.");
+            } else {
+            // Handle page visibility change   
+            document.addEventListener(visibilityChange, handleVisibilityChange, false);
+            }
+            
+            function getTime() {
+                var now = new Date();
+                if(resumeTimeOffset != null) {
+                    now.setTime(now.getTime() - resumeTimeOffset);
+                }
+                return now;
+            }
+            
+            
+            var canvasElm = document.getElementById("main");
+            var fourierNumberElm = document.getElementById("fourier_number");
+            
+            /**
+             * @type CanvasRenderingContext2D
+             */
+            var ctx = canvasElm.getContext("2d");
+            
+            var positions = [];
+            
+            var squareWave = [];
+            
+            var TOTAL_HEIGHT = 600;
+            var HEIGHT = 120;
+            var LEFT = 750;
+            var WIDTH = 400;
+            var PADDING = 40;
+            
+            var TOP = (TOTAL_HEIGHT - (2 * HEIGHT)) / 2;
+            
+            var colors = ['#EF476F', '#605B56', '#FFD166', '#06D6A0', '#712F79'];
+            
+            function fourierFunction(theta, f_number) {
+                return ((4 * Math.sin(f_number * theta)) / (f_number * Math.PI));
+            }
+            
+            function fourierValue(theta, f_number) {
+                if(f_number <= 0) return 0;
+                return fourierFunction(theta, f_number) + fourierValue(theta, f_number - 2);
+            }
+            
+            function squareValue(theta) {
+                return (theta % (2 * Math.PI)) > Math.PI? -1: 1;
+            }
+            
+            function x(value) {
+                return value + LEFT;
+            }
+            
+            function y(value, offset) {
+                if(!offset) {
+                    offset = HEIGHT;
+                }
+                return offset + (-value * offset) + TOP;
+            }
+            
+            function update() {
+                
+                if(pauseKey) {
+                    return;
+                }
+                
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.clearRect(0,0,1200,600); // clear canvas
+  
+                var time = getTime();
+                
+                var theta = (((2*Math.PI)/6)*time.getSeconds() + ((2*Math.PI)/6000)*time.getMilliseconds());
+                
+                var f_value = fourierNumberElm.value;
+                
+                positions.unshift(fourierValue(theta, f_value));
+                squareWave.unshift(squareValue(theta));
+                
+                if(positions.length > WIDTH) {
+                    positions.pop();
+                    squareWave.pop();
+                }
+                
+                var positionsCount = positions.length;
+                var x1, x2, y1, y2,xS, yS;
+                ctx.strokeRect(LEFT - PADDING, TOP- PADDING, WIDTH + 2*PADDING, 2*HEIGHT + 2*PADDING);
+                for(var i = 0; i < positionsCount - 1; i++) {
+                    x1 = x(i);
+                    x2 = x(i + 1);
+                    
+                    ctx.strokeStyle = "#333";
+                    ctx.beginPath();
+                    y1 = y(squareWave[i]);
+                    y2 = y(squareWave[i + 1]);
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    
+                    ctx.strokeStyle = "#000000";
+                    ctx.beginPath();
+                    y1 = y(positions[i]);
+                    y2 = y(positions[i + 1]);
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                    
+                    
+                }
+                
+                var final_cx = 0;
+                
+                function drawFCircle(cx, cy, r, h, num, depth) {
+                    if(num <= 0 || num > f_value) return;
+                    
+                    var f_val = fourierFunction(theta, num);
+                    //console.log(f_in);
+                    var cx_new = cx + (Math.cos(theta * num) * r),
+                        cy_new = cy + (-f_val * h);
+                        //cy_new += (cy - cy_new);
+                    
+                    var color = colors[num % colors.length];
+                    
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(cx,cy,r,0,2*Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx_new, cy_new);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.arc(cx_new,cy_new,r/ 100,0,2*Math.PI);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    final_cx = cx_new;
+                    var new_h = r / 1.27323954474 * num;
+                    
+                    var new_r = ((r * 1.27323954474 * (depth)) / (4 * (num/depth)));
+                    drawFCircle(cx_new, cy_new, new_r, new_h, num + 2, depth + 1);
+                }
+                
+                drawFCircle(400, 300, HEIGHT * 1.27323954474, HEIGHT, 1, 1);
+                
+                var yPos = y(positions[0]);
+                
+                ctx.strokeStyle = "#000000";
+                ctx.beginPath();
+                ctx.moveTo(final_cx, yPos);
+                ctx.lineTo(LEFT, yPos);
+                ctx.stroke();
+                
+                
+                requestAnimationFrame(update);
+            }
+            update();
+        </script>
+    </body>
+</html>
