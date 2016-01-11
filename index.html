@@ -3,10 +3,11 @@
     </head>
     <body>
         <canvas id="main" width="1200" height="600"></canvas><br>
-        Fourier Number: <input id="fourier_number" type="range" min="1" max="21" step="2" value="1" /><br>
+        Adjust n = <input id="fourier_number" type="range" min="1" max="91" step="2" value="1" /> | P to pause, right arrow to step when paused | <button type="button" id="playpause">Play/Pause Audio</button><br> 
         <img src="https://upload.wikimedia.org/wikipedia/commons/1/1a/Fourier_series_square_wave_circles_animation.gif">
         <script>
             var pausedTime = null;
+            var audioPaused = true;
             var resumeTimeOffset = null;
             if (typeof document.hidden !== "undefined") { // Opera 12.10 and Firefox 18 and later support 
                 hidden = "hidden";
@@ -23,6 +24,7 @@
             }
             
             var pauseKey = false;
+            var step = false;
             document.addEventListener("keydown", function(event) {
                 if(event.keyCode === 80) {
                     pauseKey = !pauseKey;
@@ -30,8 +32,16 @@
                     if(!pauseKey) {
                         update();
                     }
+                } else if(pausedTime !== null && event.keyCode == 39 ) {
+                    step = true;
+                    var now = new Date().getTime();
+                    resumeTimeOffset+= (now - pausedTime) - 17;
+                    pausedTime = now;
+                    update();
                 }
             });
+            
+            
             // document.addEventListener("keyup", function(event) {
             //     if(event.keyCode === 80) {
             //         setPause(false);
@@ -125,10 +135,51 @@
                 return offset + (-value * offset) + TOP;
             }
             
+            var prevFValue = 1;
+            
+            
+            var ac = new AudioContext();
+            var osc = ac.createOscillator();
+
+            function updateAudioWaveTable(f_value) {
+                var real = new Float32Array(200);
+                var imag = new Float32Array(200);
+                
+                var f_pos = 0;
+                do {
+                    //real[f_pos] = (f_pos % 2) == 1? f_value/f_pos: 0;
+                    real[f_pos] = (f_pos % 2) == 1? fourierFunction(Math.PI / 2, f_pos): 0;
+                    
+                } while(f_pos++ <= f_value);
+                var wave = ac.createPeriodicWave(real, imag);
+
+                osc.setPeriodicWave(wave);
+            }
+  
+            
+            
+            document.querySelector("#playpause").addEventListener("click", function() {
+                if(audioPaused) {
+                    osc = ac.createOscillator();
+                    osc.connect(ac.destination);
+                    updateAudioWaveTable(prevFValue);
+                    osc.start();
+                } else {
+                    osc.stop();
+                }
+                audioPaused = !audioPaused;
+            });
+
+            
+            
             function update() {
                 
-                if(pauseKey) {
+                if(pauseKey && !step) {
                     return;
+                }
+                
+                if(step) {
+                    step = false;
                 }
                 
                 ctx.globalCompositeOperation = 'destination-over';
@@ -139,6 +190,17 @@
                 var theta = (((2*Math.PI)/6)*time.getSeconds() + ((2*Math.PI)/6000)*time.getMilliseconds());
                 
                 var f_value = fourierNumberElm.value;
+                
+                
+                
+                if(f_value != prevFValue) {
+                    positions.length = 0;
+                    
+                    updateAudioWaveTable(f_value);
+                }
+                
+                
+                prevFValue = f_value;
                 
                 positions.unshift(fourierValue(theta, f_value));
                 squareWave.unshift(squareValue(theta));
@@ -164,12 +226,14 @@
                     ctx.stroke();
                     
                     ctx.strokeStyle = "#000000";
+                    ctx.lineWidth = 2;
                     ctx.beginPath();
                     y1 = y(positions[i]);
                     y2 = y(positions[i + 1]);
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
                     ctx.stroke();
+                    ctx.lineWidth = 1;
                     
                     
                 }
@@ -193,20 +257,27 @@
                     ctx.arc(cx,cy,r,0,2*Math.PI);
                     ctx.stroke();
                     
+                    ctx.lineWidth = 2;
                     ctx.beginPath();
+                    
                     ctx.moveTo(cx, cy);
                     ctx.lineTo(cx_new, cy_new);
                     ctx.stroke();
+                    ctx.lineWidth = 1;
                     
                     ctx.beginPath();
-                    ctx.arc(cx_new,cy_new,r/ 100,0,2*Math.PI);
+                    ctx.arc(cx_new,cy_new,Math.max(r / 20, 2),0,2*Math.PI);
                     ctx.closePath();
                     ctx.fill();
                     
                     final_cx = cx_new;
-                    var new_h = r / 1.27323954474 * num;
+                    var new_h = (r / 1.27323954474) * num;
+                    //var new_h = (HEIGHT)  / (num * depth);
                     
-                    var new_r = ((r * 1.27323954474 * (depth)) / (4 * (num/depth)));
+                    //var new_r = ((r * 1.27323954474 * (depth)) / (4 * (num/depth)));
+                    var new_r = (HEIGHT * 1.27323954474)  / (depth * Math.PI);
+                    
+                    //var new_h = (new_r * num) / (4 / (num));
                     drawFCircle(cx_new, cy_new, new_r, new_h, num + 2, depth + 1);
                 }
                 
@@ -214,11 +285,22 @@
                 
                 var yPos = y(positions[0]);
                 
+                ctx.lineWidth = 2;
                 ctx.strokeStyle = "#000000";
                 ctx.beginPath();
                 ctx.moveTo(final_cx, yPos);
                 ctx.lineTo(LEFT, yPos);
                 ctx.stroke();
+                ctx.lineWidth = 1;
+                
+                ctx.fillStyle = "#000000";
+                ctx.font = "20px sans-serif";
+                
+                var angle = (theta % (2* Math.PI));
+                var angleDeg = Math.round(((180 * angle) / Math.PI) * 100) / 100;
+                var angleRad = Math.round(angle * 100) / 100;
+                
+                ctx.fillText("Fourier Series n = " + f_value + ", \u03B8 \u2245 "+ angleRad +"\u33AD (" + angleDeg + "\u00B0)", 10, 550);
                 
                 
                 requestAnimationFrame(update);
