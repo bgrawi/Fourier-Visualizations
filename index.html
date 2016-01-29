@@ -2,6 +2,7 @@
     <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.css">
+        <title>Understanding Fourier Approximations</title>
     </head>
     <body ng-app="Fourier" fourier-app ng-cloak>
          <md-content>
@@ -15,13 +16,13 @@
                     </h2>
                     <span flex></span>
                     <md-button ng-click="app.status.visualizationPaused = !app.status.visualizationPaused" class="md-icon-button" aria-label="PlayPause">
-                        <md-icon>{{app.status.visualizationPaused? 'pause':'play_arrow'}}</md-icon>
+                        <md-icon>{{!app.status.visualizationPaused? 'pause':'play_arrow'}}</md-icon>
                     </md-button>
                     <md-button ng-disabled="!app.status.visualizationPaused" ng-mousedown="app.status.step = true" class="md-icon-button" aria-label="Next">
                         <md-icon>skip_next</md-icon>
                     </md-button>
                     <md-button ng-click="app.status.audioPaused = !app.status.audioPaused" class="md-icon-button" aria-label="Mute" id="playpause">
-                         <md-icon>{{app.status.audioPaused? 'volume_off': 'volume_up'}}</md-icon>
+                         <md-icon>{{!app.status.audioPaused? 'volume_off': 'volume_up'}}</md-icon>
                     </md-button>
                 </div>
             </md-toolbar>
@@ -40,10 +41,10 @@
                 </div>
                 <div layout flex="25">
                     <div flex="40" layout layout-align="center center">
-                        <span flex>N Max =</span>
+                        <span flex>N = {{app.options.evaluation.value}}</span>
                     </div>
                     <div flex layout layout-align="center center">
-                        <md-slider md-discrete aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
+                        <md-slider aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
                         </md-slider>
                     </div>
                 </div>
@@ -152,6 +153,10 @@
                     function triangleFourierFunctionMax(f_number) {
                         return Math.abs(((8 * (Math.pow(-1, (f_number - 1) / 2)))  / (f_number * f_number * Math.PI * Math.PI)) * lanczosFactor(f_number));
                     }
+                    
+                    function triangleFourierFunctionCoef(f_number) {
+                        return ((8 * (Math.pow(-1, (f_number - 1) / 2)))  / (f_number * f_number * Math.PI * Math.PI)) * lanczosFactor(f_number);
+                    }
 
                     
                     this.waves = [
@@ -162,16 +167,24 @@
                                 return (theta % (2 * Math.PI)) > Math.PI? -1: 1;
                             },
                             fourierFunction: basicFourierFunction,
-                            fourierFunctionMax: basicFourierFunctionMax
+                            fourierFunctionMax: basicFourierFunctionMax,
+                            getAudioWaveCoefficients: function(f_pos) {
+                                var imag = ((f_pos  % 2) === 1)? basicFourierFunctionMax(f_pos): 0;
+                                return [0, imag];
+                            }
                         },
                         {
-                            name: 'Sawtooth',
+                            name: 'Inverse Sawtooth',
                             start: 2,
                             actualWave: function (theta) {
                                 return 1 - ( (theta % (Math.PI)) / (Math.PI / 2));
                             },
                             fourierFunction: basicFourierFunction,
-                            fourierFunctionMax: basicFourierFunctionMax
+                            fourierFunctionMax: basicFourierFunctionMax,
+                            getAudioWaveCoefficients: function(f_pos) {
+                                var imag = ((f_pos  % 2) === 0)? basicFourierFunctionMax(f_pos): 0;
+                                return [0, imag];
+                            }
                         },
                         {
                             name: 'Triangle',
@@ -188,7 +201,11 @@
                                 //return (mod_theta > Math.PI / 2 && mod_theta > (3 * Math.PI) / 2)? (1 - ((2/Math.PI) * (mod_theta - (Math.PI/2)))): ;
                             },
                             fourierFunction: triangleFourierFunction,
-                            fourierFunctionMax: triangleFourierFunctionMax
+                            fourierFunctionMax: triangleFourierFunctionMax,
+                            getAudioWaveCoefficients: function(f_pos) {
+                                var imag = ((f_pos  % 2) === 1)? -triangleFourierFunctionCoef(f_pos): 0;
+                                return [0, imag];
+                            }
                         }
                     ];
                     $scope.waves = this.waves;
@@ -282,7 +299,7 @@
 
                     
 
-                    var TOP = (TOTAL_HEIGHT - (2 * HEIGHT)) / 2;
+                    var TOP = 50;
 
                     var colors = ['#EF476F', '#605B56', '#FFD166', '#06D6A0', '#712F79'];
 
@@ -330,16 +347,16 @@
                     osc.frequency.value = 220;
 
                     function updateAudioWaveTable(f_value) {
-                        var real = new Float32Array(200);
-                        var imag = new Float32Array(200);
+                        var parts = [new Float32Array(200), new Float32Array(200)];
+                        var result;
                         
                         var f_pos = 0;
                         do {
-                            //real[f_pos] = (f_pos % 2) == 1? f_value/f_pos: 0;
-                            real[f_pos] = ((f_pos -1 + fourierApp.options.wave.start) % 2) == 1? fourierFunctionMax(f_pos): 0;
-                            
+                            result = fourierApp.options.wave.getAudioWaveCoefficients(f_pos);
+                            parts[0][f_pos] = result[0];
+                            parts[1][f_pos] = result[1];
                         } while(f_pos++ <= f_value);
-                        var wave = ac.createPeriodicWave(real, imag);
+                        var wave = ac.createPeriodicWave(parts[0], parts[1]);
 
                         osc.setPeriodicWave(wave);
                     }
@@ -359,6 +376,17 @@
                         }
                     });
                     
+                    function drawArrow(x, y, s, w, color) {
+                        ctx.stokeStyle = color;
+                        ctx.lineWidth = w;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x - s, y - (s * .6));
+                        ctx.lineTo(x, y);
+                        ctx.lineTo(x - s, y + (s * .6));
+                        ctx.stroke();
+                    }
+                    
                     function drawShadeCircle(cx, cy, r, color, width) {
                         ctx.strokeStyle = color;
                             ctx.fillStyle = '#FFFFFF';
@@ -370,6 +398,7 @@
                             ctx.stroke();
                             ctx.globalAlpha = 1;
                     }
+                   
                     
                     function drawCircle(cx, cy, r, armX, armY, color) {
 
@@ -447,30 +476,35 @@
 
                     function drawComponents(positions, theta) {
                         
-                        var x = 100,
-                            top = 50,
+                        var x = 220,
+                            top = 500,
                             h = 25,
-                            width = 250,
-                            history_count = 50;
+                            width = 200,
+                            history_count = 50,
+                            text_top = 420;
                             
                         var val1, val2, cur_pos, r, x_start;
                         
                         var x1, x2, y1, y2;
                         
                         var text_x_start;
+                        
+                        var angle = (theta % (2* Math.PI));
+                        var angleRad = angle.toFixed(2);
                     
                         ctx.fillStyle = "#444";
                         ctx.font = "20px \"Cambria Math\"";
                         ctx.textAlign = "left";
                         ctx.textBaseline = "middle";
-                        ctx.fillText("f(\u03B8) = ", 5, top);
+                        ctx.fillText("f(\u03B8) = ", 115, text_top);
+                        ctx.fillText("f("+ angleRad + "\u33AD) \u2245 " + positions[0].total.toFixed(2) + " \u2245 ", 5, top);
                         ctx.textBaseline = "alphabetic";
                         
                         for(var num = f_value; num >= fourierApp.options.wave.start && x + width < TOTAL_WIDTH; num-=2, x+=width) {
                             cur_pos = drawFourierCircle(x, top, h, num, theta);
                             
                             r = h * fourierFunctionMax(num);
-                            x_start = x + (r) + 10;
+                            x_start = x + (r) + 30;
                             
                             x1 = x_start;
                             
@@ -483,8 +517,8 @@
                                
                                 x2 = x1 + 1;
                                 
-                                y1 = h + (-val1 * h) + (top / 2);
-                                y2 = h + (-val2 * h) + (top / 2);
+                                y1 = (-val1 * h) + (top);
+                                y2 = (-val2 * h) + (top);
                                 
                                 ctx.moveTo(x1, y1);
                                 ctx.lineTo(x2, y2);
@@ -494,12 +528,14 @@
                             ctx.stroke();
                             
                             val2 = positions[0].components[num];
-                            y2 = h + (-val2 * h) + (top / 2);
+                            y2 = (-val2 * h) + (top);
                             
                             ctx.beginPath();
                             ctx.moveTo(cur_pos[0], y2);
                             ctx.lineTo(x_start, y2);
                             ctx.stroke();
+                            
+                            drawArrow(x_start, y2, 3, 1, colors[num % colors.length]);
                             
                             ctx.beginPath();
                             ctx.moveTo(x_start, top - r);
@@ -511,30 +547,37 @@
                             ctx.lineTo(x_start + history_count, top + r);
                             ctx.stroke();
                             
-                            var text_x = x_start + history_count + 13;
+                            var text_x = x - h;
                             text_x_start = text_x;
+                            
+                            ctx.font = "10px \"Cambria Math\"";
+                            ctx.textAlign = "left";   
+                            ctx.textBaseline = "middle";   
+                            ctx.fillText(positions[0].components[num].toFixed(2), x_start - 20, y2 - 7);
                             
                             var print_num =  num > 1? num: '';
                             
-                            var top_text = "4sin(" + print_num + "\u03B8)",
-                                bottom_text = print_num + "\u03C0";
-                            
                             ctx.font = "20px \"Cambria Math\"";
-                            ctx.textAlign = "center";    
+                            ctx.textAlign = "center";   
+                            ctx.textBaseline = "alphabetic";   
                             
-                            var measurement = ctx.measureText(top_text);
+                            var numerator_text = "4sin(" + print_num + "\u03B8)",
+                                denominator_text = print_num + "\u03C0";
+                             
+                            
+                            var measurement = ctx.measureText(numerator_text);
                                 
                             text_x += measurement.width / 2;
                             
                             
-                            ctx.fillText(top_text, text_x, top - 10);
-                            ctx.fillText(bottom_text, text_x, top + 20);
+                            ctx.fillText(numerator_text, text_x, text_top - 10);
+                            ctx.fillText(denominator_text, text_x, text_top + 20);
                             
                             
-                            ctx.strokeWidth = 1;
+                            ctx.lineWidth = 1;
                             ctx.beginPath();
-                            ctx.moveTo(text_x_start - 3, top);
-                            ctx.lineTo(text_x_start + measurement.width + 3, top);
+                            ctx.moveTo(text_x_start - 3, text_top);
+                            ctx.lineTo(text_x_start + measurement.width + 3, text_top);
                             ctx.stroke();
                             
                             text_x_start += measurement.width + 20;
@@ -544,7 +587,7 @@
                                 ctx.font = "40px sans-serif";
                                 ctx.textAlign = "left";
                                 ctx.textBaseline = "middle";    
-                                ctx.fillText("+", text_x_start, top);
+                                ctx.fillText("+", text_x_start, text_top);
                                 ctx.textBaseline = "alphabetic";
                             }
                         }
@@ -563,7 +606,7 @@
                     }
 
                     var f_value = fourierApp.options.evaluation.value;
-                    var time = performance.now();
+                    var time = 0;
                          
                     function update() {
                         var t1 = performance.now();
@@ -612,7 +655,7 @@
                         var x1, x2, y1, y2;
                         
                         ctx.strokeStyle = "#00000";
-                        ctx.strokeRect(LEFT - PADDING, TOP- PADDING, WIDTH + 2*PADDING, 2*HEIGHT + 2*PADDING);
+                        ctx.strokeRect(LEFT, TOP- PADDING, WIDTH, 2*HEIGHT + 2*PADDING);
                         
 
                         ctx.strokeStyle = "#333";
@@ -648,7 +691,7 @@
                         
                         drawComponents(positions, theta);
                         
-                        var final_cx = drawTotalCircles(400, 300, theta);
+                        var final_cx = drawTotalCircles(300, TOP + HEIGHT, theta);
                         
                         var yPos = y(positions[0].total);
                         
@@ -660,15 +703,7 @@
                         ctx.stroke();
                         ctx.lineWidth = 1;
                         
-                        ctx.fillStyle = "#000000";
-                        ctx.font = "20px sans-serif";
-                        ctx.textAlign = "left";
-                        
-                        var angle = (theta % (2* Math.PI));
-                        var angleDeg = Math.round(((180 * angle) / Math.PI) * 100) / 100;
-                        var angleRad = Math.round(angle * 100) / 100;
-                        
-                        ctx.fillText(fourierApp.options.wave.name + " wave fourier series, maximum n = " + f_value + ", \u03B8 \u2245 "+ angleRad +"\u33AD (" + angleDeg + "\u00B0)", 10, 550);
+                        drawArrow(LEFT, yPos, 7, 2, "#000");
                         
                         frametimes.push(performance.now() -t1);
                         requestAnimationFrame(update);
