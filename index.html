@@ -149,13 +149,38 @@
                     function triangleFourierFunction(theta, f_number) {
                         return ((8 * (Math.pow(-1, (f_number - 1) / 2) ) * Math.sin( f_number * theta)) / (f_number * f_number * Math.PI * Math.PI)) * lanczosFactor(f_number);
                     }
-
-                    function triangleFourierFunctionMax(f_number) {
-                        return Math.abs(((8 * (Math.pow(-1, (f_number - 1) / 2)))  / (f_number * f_number * Math.PI * Math.PI)) * lanczosFactor(f_number));
-                    }
                     
                     function triangleFourierFunctionCoef(f_number) {
                         return ((8 * (Math.pow(-1, (f_number - 1) / 2)))  / (f_number * f_number * Math.PI * Math.PI)) * lanczosFactor(f_number);
+                    }
+
+                    function triangleFourierFunctionMax(f_number) {
+                        return Math.abs(triangleFourierFunctionCoef(f_number));
+                    }
+                    
+                    function getDisplayLanczosFactor(n) {
+                        var total = $scope.options.evaluation.value;
+                        if(n == 1) n = '';
+                        
+                        if(total > 1 && total != n) {
+                            return n + '\u03C0' + '/' + total;
+                        } else {
+                            return '\u03C0';
+                        }
+                    }
+                    
+                    function getDisplayLanczosNumerator(n) {
+                        if(!$scope.options.useLanczosFactor) {
+                            return '';
+                        }
+                        return " \u00D7 sin(" + getDisplayLanczosFactor(n) + ")";
+                    }
+                    
+                    function getDisplayLanczosDenominator(n) {
+                        if(!$scope.options.useLanczosFactor) {
+                            return '';
+                        }
+                        return " \u00D7 " + getDisplayLanczosFactor(n);
                     }
 
                     
@@ -171,10 +196,18 @@
                             getAudioWaveCoefficients: function(f_pos) {
                                 var imag = ((f_pos  % 2) === 1)? basicFourierFunctionMax(f_pos): 0;
                                 return [0, imag];
+                            },
+                            getDisplayNumerator: function(n) {
+                                if(n == 1) n = '';
+                                return "4sin(" + n + "\u03B8)" + getDisplayLanczosNumerator(n);
+                            },
+                            getDisplayDenominator: function(n) {
+                                if(n == 1) n = '';
+                                return n + "\u03C0" + getDisplayLanczosDenominator(n);
                             }
                         },
                         {
-                            name: 'Inverse Sawtooth',
+                            name: 'Sawtooth',
                             start: 2,
                             actualWave: function (theta) {
                                 return 1 - ( (theta % (Math.PI)) / (Math.PI / 2));
@@ -184,6 +217,14 @@
                             getAudioWaveCoefficients: function(f_pos) {
                                 var imag = ((f_pos  % 2) === 0)? basicFourierFunctionMax(f_pos): 0;
                                 return [0, imag];
+                            },
+                            getDisplayNumerator: function(n) {
+                                if(n == 1) n = '';
+                                return "4sin(" + n + "\u03B8)" + getDisplayLanczosNumerator(n);
+                            },
+                            getDisplayDenominator: function(n) {
+                                if(n == 1) n = '';
+                                return n + "\u03C0" + getDisplayLanczosDenominator(n);
                             }
                         },
                         {
@@ -205,6 +246,19 @@
                             getAudioWaveCoefficients: function(f_pos) {
                                 var imag = ((f_pos  % 2) === 1)? -triangleFourierFunctionCoef(f_pos): 0;
                                 return [0, imag];
+                            },
+                            getDisplayNumerator: function(n) {
+                                var sign = (Math.pow(-1, (n - 1) / 2) > 0)?'':'-';
+                                if(n == 1) n = '';
+                                return sign + "8sin(" + n + "\u03B8)" + getDisplayLanczosNumerator(n);
+                            },
+                            getDisplayDenominator: function(n) {
+                                if(n == 1) {
+                                    n = '';
+                                } else {
+                                    n = (n * n);
+                                }
+                                return n + "\u03C0\u00B2" + getDisplayLanczosDenominator(n);
                             }
                         }
                     ];
@@ -295,11 +349,11 @@
 
                     var positions = [];
 
-                    var squareWave = [];
+                    var actualWave = [];
 
                     
 
-                    var TOP = 50;
+                    var TOP = 85;
 
                     var colors = ['#EF476F', '#605B56', '#FFD166', '#06D6A0', '#712F79'];
 
@@ -477,17 +531,18 @@
                     function drawComponents(positions, theta) {
                         
                         var x = 220,
-                            top = 500,
+                            top = 550,
                             h = 25,
-                            width = 200,
+                            width = 170,
+                            min_width = width,
                             history_count = 50,
-                            text_top = 420;
+                            text_top = 470;
                             
                         var val1, val2, cur_pos, r, x_start;
                         
                         var x1, x2, y1, y2;
                         
-                        var text_x_start;
+                        var plus_pos;
                         
                         var angle = (theta % (2* Math.PI));
                         var angleRad = angle.toFixed(2);
@@ -548,21 +603,19 @@
                             ctx.stroke();
                             
                             var text_x = x - h;
-                            text_x_start = text_x;
+                            var text_x_start = text_x;
                             
                             ctx.font = "10px \"Cambria Math\"";
-                            ctx.textAlign = "left";   
-                            ctx.textBaseline = "middle";   
-                            ctx.fillText(positions[0].components[num].toFixed(2), x_start - 20, y2 - 7);
+                            ctx.textAlign = "right";     
+                            ctx.fillText(positions[0].components[num].toFixed(2), x_start - 3, y2 - 2);
                             
-                            var print_num =  num > 1? num: '';
                             
                             ctx.font = "20px \"Cambria Math\"";
                             ctx.textAlign = "center";   
                             ctx.textBaseline = "alphabetic";   
                             
-                            var numerator_text = "4sin(" + print_num + "\u03B8)",
-                                denominator_text = print_num + "\u03C0";
+                            var numerator_text = fourierApp.options.wave.getDisplayNumerator(num),
+                                denominator_text = fourierApp.options.wave.getDisplayDenominator(num);
                              
                             
                             var measurement = ctx.measureText(numerator_text);
@@ -580,16 +633,19 @@
                             ctx.lineTo(text_x_start + measurement.width + 3, text_top);
                             ctx.stroke();
                             
-                            text_x_start += measurement.width + 20;
+                            plus_pos = Math.max(text_x_start + measurement.width + 30, x_start + history_count + 10);
                             
                             if(num - 2 >= fourierApp.options.wave.start) {
                                 ctx.fillStyle = "#444";
                                 ctx.font = "40px sans-serif";
                                 ctx.textAlign = "left";
                                 ctx.textBaseline = "middle";    
-                                ctx.fillText("+", text_x_start, text_top);
+                                ctx.fillText("+", plus_pos, text_top);
+                                ctx.fillText("+", plus_pos, top);
                                 ctx.textBaseline = "alphabetic";
                             }
+                            
+                            width = Math.max(min_width, plus_pos -x + 60);
                         }
                         
                         
@@ -598,7 +654,8 @@
                             ctx.font = "40px sans-serif";
                             ctx.textAlign = "left";
                             ctx.textBaseline = "middle";    
-                            ctx.fillText("+ \u22EF", text_x_start, top);
+                            ctx.fillText("   \u22EF", plus_pos, text_top);
+                            ctx.fillText("   \u22EF", plus_pos, top);
                             ctx.textBaseline = "alphabetic";    
                         }
                         
@@ -635,7 +692,7 @@
                         
                         if(clear) {
                             positions.length = 0;
-                            squareWave.length = 0;
+                            actualWave.length = 0;
                             
                             updateAudioWaveTable(f_value);
                             clear = false;
@@ -644,11 +701,11 @@
                         prevFValue = f_value;
                         
                         positions.unshift(fourierValue(theta, f_value));
-                        squareWave.unshift(fourierApp.options.wave.actualWave(theta));
+                        actualWave.unshift(fourierApp.options.wave.actualWave(theta));
                         
                         if(positions.length > WIDTH) {
                             positions.pop();
-                            squareWave.pop();
+                            actualWave.pop();
                         }
                         
                         var positionsCount = positions.length;
@@ -664,8 +721,8 @@
                             x1 = x(i);
                             x2 = x(i + 1);
                             
-                            y1 = y(squareWave[i]);
-                            y2 = y(squareWave[i + 1]);
+                            y1 = y(actualWave[i]);
+                            y2 = y(actualWave[i + 1]);
                             ctx.moveTo(x1, y1);
                             ctx.lineTo(x2, y2);
                             
@@ -702,6 +759,11 @@
                         ctx.lineTo(LEFT, yPos);
                         ctx.stroke();
                         ctx.lineWidth = 1;
+                        
+                        ctx.font = "20px \"Cambria Math\"";
+                        ctx.textAlign = "right";
+                        ctx.fillStyle = "#000000";
+                        ctx.fillText(positions[0].total.toFixed(2), LEFT - 5, yPos - 5);
                         
                         drawArrow(LEFT, yPos, 7, 2, "#000");
                         
