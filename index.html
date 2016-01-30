@@ -27,7 +27,7 @@
                 </div>
             </md-toolbar>
             <div layout layout-margin layout-padding layout-align="center stretch">
-                <div layout flex="25">
+                <div layout flex="20">
                     <div flex layout layout-align="center center">
                         <md-input-container>
                             <label>Waveform</label>
@@ -39,7 +39,7 @@
                         </md-input-container>
                     </div>
                 </div>
-                <div layout flex="25">
+                <div layout flex="20">
                     <div flex="40" layout layout-align="center center">
                         <span flex>N = {{app.options.evaluation.value}}</span>
                     </div>
@@ -50,12 +50,19 @@
                 </div>
                 <div layout flex="25">
                     <div flex layout layout-align="center center">
+                        <md-switch ng-model="app.options.singleWave" aria-label="Switch 1">
+                        Single Wave?
+                        </md-switch>
+                    </div>
+                </div>
+                <div layout flex="25">
+                    <div flex layout layout-align="center center">
                         <md-switch ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
                         Use Lanczos Sigma Factor?
                         </md-switch>
                     </div>
                 </div>
-                <div layout flex="25">
+                <div layout flex="20">
                     <div flex="20" layout layout-align="center center">
                         <span flex>Rate:</span>
                     </div>
@@ -69,7 +76,7 @@
                 <div fourier-canvas=""></div>
             </div>
             <div style="padding: 20px;">
-                P to pause, right arrow to step when paused, <a href="https://upload.wikimedia.org/wikipedia/commons/1/1a/Fourier_series_square_wave_circles_animation.gif">inspiration, here</a><br><br>
+                P to pause, right arrow to step when paused, M to mute. Press the speaker in the upper right to hear the wave shown above in an audible frequency.<br> <a href="https://commons.wikimedia.org/wiki/File:Fourier_series_square_wave_circles_animation.gif#/media/File:Fourier_series_square_wave_circles_animation.gif" target="_blank">Original inspiration here</a>.
             </div>
         </md-content>
         <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
@@ -112,13 +119,14 @@
                     this.options = {
                         evaluation: {
                             min: 1,
-                            max: 63,
+                            max: 79,
                             step: 2,
-                            value: 1
+                            value: 7
                         },
                         useLanczosFactor: false,
                         rate: 6000,
-                        wave: null
+                        wave: null,
+                        singleWave: false
                     };
                     $scope.options = this.options;
                     
@@ -216,6 +224,7 @@
                             fourierFunctionMax: basicFourierFunctionMax,
                             getAudioWaveCoefficients: function(f_pos) {
                                 var imag = ((f_pos  % 2) === 0)? basicFourierFunctionMax(f_pos): 0;
+                                
                                 return [0, imag];
                             },
                             getDisplayNumerator: function(n) {
@@ -253,12 +262,13 @@
                                 return sign + "8sin(" + n + "\u03B8)" + getDisplayLanczosNumerator(n);
                             },
                             getDisplayDenominator: function(n) {
-                                if(n == 1) {
-                                    n = '';
+                                var disp = n;
+                                if(disp == 1) {
+                                    disp = '\u03C0\u00B2';
                                 } else {
-                                    n = (n * n);
+                                    disp = "(" + disp + "\u03C0)\u00B2";
                                 }
-                                return n + "\u03C0\u00B2" + getDisplayLanczosDenominator(n);
+                                return disp + "" + getDisplayLanczosDenominator(n);
                             }
                         }
                     ];
@@ -281,6 +291,8 @@
                     document.addEventListener("keydown", function(event) {
                         if(event.keyCode === 80) {
                             app.scope.status.visualizationPaused = !app.scope.status.visualizationPaused;
+                        } else if(event.keyCode === 77) {
+                            app.scope.status.audioPaused = !app.scope.status.audioPaused;
                         } else if(app.status.visualizationPaused && event.keyCode == 39 ) {
                             app.scope.status.step = true;
                         }
@@ -357,8 +369,7 @@
 
                     var colors = ['#EF476F', '#605B56', '#FFD166', '#06D6A0', '#712F79'];
 
-                    var useLanczosFactor = fourierApp.options.useLanczosFactor,
-                        fourierFunction = fourierApp.options.wave.fourierFunction,
+                    var fourierFunction = fourierApp.options.wave.fourierFunction,
                         fourierFunctionMax = fourierApp.options.wave.fourierFunctionMax;
 
 
@@ -399,17 +410,30 @@
                     var ac = new AudioContext();
                     var osc = ac.createOscillator();
                     osc.frequency.value = 220;
+                    
+                    var gainNode = ac.createGain();
+                    
+                    gainNode.gain.value = 1;
 
                     function updateAudioWaveTable(f_value) {
                         var parts = [new Float32Array(200), new Float32Array(200)];
                         var result;
                         
-                        var f_pos = 0;
-                        do {
-                            result = fourierApp.options.wave.getAudioWaveCoefficients(f_pos);
-                            parts[0][f_pos] = result[0];
-                            parts[1][f_pos] = result[1];
-                        } while(f_pos++ <= f_value);
+                        if(fourierApp.options.singleWave) {
+                            result = fourierApp.options.wave.getAudioWaveCoefficients(f_value);
+                            gainNode.gain.value = result[1] / fourierApp.options.wave.getAudioWaveCoefficients(fourierApp.options.wave.start)[1];
+                            parts[0][f_value] = result[0];
+                            parts[1][f_value] = result[1];
+                        } else {
+                            gainNode.gain.value = 1;
+                            var f_pos = 0;
+                            do {
+                                result = fourierApp.options.wave.getAudioWaveCoefficients(f_pos);
+                                parts[0][f_pos] = result[0];
+                                parts[1][f_pos] = result[1];
+                            } while(f_pos++ <= f_value);
+                        }
+                        
                         var wave = ac.createPeriodicWave(parts[0], parts[1]);
 
                         osc.setPeriodicWave(wave);
@@ -422,13 +446,15 @@
                         if(!newVal) {
                             osc = ac.createOscillator();
                             osc.frequency.value = 220;
-                            osc.connect(ac.destination);
+                            osc.connect(gainNode);
+                            gainNode.connect(ac.destination);
                             updateAudioWaveTable(prevFValue);
                             osc.start();
                         } else {
                             osc.stop();
                         }
                     });
+                    
                     
                     function drawArrow(x, y, s, w, color) {
                         ctx.stokeStyle = color;
@@ -485,7 +511,7 @@
                         var r = Math.max(max_h * h, 0);
                         
                         if(r === 0) {
-                            return;
+                            return [cx, cy];
                         }
 
                         var y_val = fourierFunction(theta, num);
@@ -496,21 +522,17 @@
                         
                         armX = cx + (-x_val * h);
                         
-                        if(useLanczosFactor) {
+                        //console.log(useLanczosFactor);
+                        if(fourierApp.options.useLanczosFactor) {
 
-                            useLanczosFactor = false;
+                            fourierApp.options.useLanczosFactor = false;
                             var new_r = h * fourierFunctionMax(num);
-                            width = new_r - r;
-                            
-                            if(width < 0) {
-                                width = new_r;
-                                new_r = 1;
-                            } else {
+                            var width = new_r - r;
+                            if(width > 0) {
                                 new_r -= width/2;
-                            }
-                            
-                            drawShadeCircle(cx, cy, new_r, colors[num % colors.length], width);
-                            useLanczosFactor = true;
+                                drawShadeCircle(cx, cy, new_r, colors[num % colors.length], width);
+                            } 
+                            fourierApp.options.useLanczosFactor = true;
                         }
 
                         drawCircle(cx, cy, r, armX, armY, colors[num % colors.length]);
@@ -520,8 +542,13 @@
                     
                     function drawTotalCircles(cx, cy, theta) {
                         var cur_pos;
-                        for(var num = fourierApp.options.wave.start; num <= f_value; num+=2, cx = cur_pos[0], cy = cur_pos[1]) {
-                            cur_pos = drawFourierCircle(cx, cy, HEIGHT, num, theta);
+                        if(!fourierApp.options.singleWave) { 
+                            for(var num = fourierApp.options.wave.start; num <= f_value; num+=2, cx = cur_pos[0], cy = cur_pos[1]) {
+                                cur_pos = drawFourierCircle(cx, cy, HEIGHT, num, theta);
+                            }
+                        } else {
+                            cur_pos = drawFourierCircle(cx, cy, HEIGHT, f_value, theta);
+                            cx = cur_pos[0]
                         }
                         
                         return cx;
@@ -681,7 +708,6 @@
                        
                         
                         f_value = fourierApp.options.evaluation.value;
-                        useLanczosFactor = fourierApp.options.useLanczosFactor;
                         fourierFunction = fourierApp.options.wave.fourierFunction;
                         fourierFunctionMax = fourierApp.options.wave.fourierFunctionMax;
 
@@ -715,7 +741,7 @@
                         ctx.strokeRect(LEFT, TOP- PADDING, WIDTH, 2*HEIGHT + 2*PADDING);
                         
 
-                        ctx.strokeStyle = "#333";
+                        ctx.strokeStyle = "#888";
                         ctx.beginPath();
                         for(var i = 0; i < positionsCount - 1; i++) {
                             x1 = x(i);
@@ -728,6 +754,7 @@
                             
                         }
                         ctx.stroke();
+                        ctx.setLineDash([]);
                         
                         ctx.strokeStyle = "#000000";
                         ctx.lineWidth = 2;
@@ -736,9 +763,13 @@
                         for(var i = 0; i < positionsCount - 1; i++) {
                             x1 = x(i);
                             x2 = x(i + 1);
-                            
-                            y1 = y(positions[i].total);
-                            y2 = y(positions[i + 1].total);
+                            if(!fourierApp.options.singleWave) {
+                                y1 = y(positions[i].total);
+                                y2 = y(positions[i + 1].total);
+                            } else {
+                                y1 = y(positions[i].components[f_value]);
+                                y2 = y(positions[i + 1].components[f_value]);
+                            }
                             ctx.moveTo(x1, y1);
                             ctx.lineTo(x2, y2);
                         }
@@ -750,7 +781,9 @@
                         
                         var final_cx = drawTotalCircles(300, TOP + HEIGHT, theta);
                         
-                        var yPos = y(positions[0].total);
+                        var yVal = fourierApp.options.singleWave?positions[0].components[f_value]: positions[0].total;
+                        
+                        var yPos = y(yVal);
                         
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = "#000000";
@@ -763,7 +796,7 @@
                         ctx.font = "20px \"Cambria Math\"";
                         ctx.textAlign = "right";
                         ctx.fillStyle = "#000000";
-                        ctx.fillText(positions[0].total.toFixed(2), LEFT - 5, yPos - 5);
+                        ctx.fillText(yVal.toFixed(2), LEFT - 5, yPos - 5);
                         
                         drawArrow(LEFT, yPos, 7, 2, "#000");
                         
