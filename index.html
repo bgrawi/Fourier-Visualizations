@@ -2,36 +2,58 @@
     <head>
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
         <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.css">
-        <title>Understanding Fourier Approximations</title>
+        <title>Understanding Fourier Approximations &amp; Oscillators</title>
+        <style>
+            /* Override to make the text appear white on the dark bg */
+            md-select.md-hue-3:not([disabled]):focus .md-select-value {
+                border-bottom-color: rgb(167,255,235);
+                color: rgba(255,255,255,1);
+            }
+            
+        </style>
     </head>
-    <body ng-app="Fourier" fourier-app ng-cloak>
-         <md-content>
+    <body ng-app="Fourier" fourier-app ng-cloak  style="background-color: #E0F2F1;">
+         <md-content style="background-color: #E0F2F1;">
             <md-toolbar>
                 <div class="md-toolbar-tools">
                    <md-button class="md-icon-button" aria-label="Settings">
                     <md-icon class="md-icon-button">timeline</md-icon>
                    </md-button>
                     <h2>
-                        <span> Understanding Fourier Approximations</span>
+                        <span> Understanding Fourier Approximations &amp; Oscillators</span>
                     </h2>
                     <span flex></span>
                     <md-button ng-click="app.status.visualizationPaused = !app.status.visualizationPaused" class="md-icon-button" aria-label="PlayPause">
                         <md-icon>{{!app.status.visualizationPaused? 'pause':'play_arrow'}}</md-icon>
+                        <md-tooltip md-direction="left">
+                        {{!app.status.visualizationPaused? 'Pause the visualization':'Play the visualization'}} [P]
+                        </md-tooltip>
                     </md-button>
                     <md-button ng-disabled="!app.status.visualizationPaused" ng-mousedown="app.status.step = true" class="md-icon-button" aria-label="Next">
                         <md-icon>skip_next</md-icon>
+                        <md-tooltip>
+                        Step one frame at a time [S]
+                        </md-tooltip>
                     </md-button>
                     <md-button ng-click="app.status.audioPaused = !app.status.audioPaused" class="md-icon-button" aria-label="Mute" id="playpause">
-                         <md-icon>{{!app.status.audioPaused? 'volume_off': 'volume_up'}}</md-icon>
+                         <md-icon>{{app.status.audioPaused? 'volume_off': 'volume_up'}}</md-icon>
+                         <md-tooltip>
+                        {{app.status.audioPaused? 'Hear the wave at a base frequency of 220hz':'Mute the wave'}} [M]
+                        </md-tooltip>
                     </md-button>
+                    <div layout flex="10">
+                        <md-slider class="md-primary md-hue-3" aria-label="Volume" flex min="0" max="1" step="0.01" ng-model="app.options.volume" ng-disabled="app.status.audioPaused">
+                        </md-slider>
+                    </div>
                 </div>
             </md-toolbar>
+            <md-toolbar class="md-primary md-hue-2">
             <div layout layout-margin layout-padding layout-align="center stretch">
-                <div layout flex="20">
+                <div layout flex="">
                     <div flex layout layout-align="center center">
-                        <md-input-container>
-                            <label>Waveform</label>
-                            <md-select ng-model="app.options.wave">
+                        <md-input-container class="md-primary md-hue-3">
+                            <label style="color: rgba(255, 255, 255, .87);">Waveform</label>
+                            <md-select class="md-primary md-hue-3" ng-model="app.options.wave">
                                 <md-option ng-repeat="wave in app.waves" ng-value="wave">
                                 {{wave.name}}
                                 </md-option>
@@ -39,44 +61,48 @@
                         </md-input-container>
                     </div>
                 </div>
-                <div layout flex="20">
-                    <div flex="40" layout layout-align="center center">
-                        <span flex>N = {{app.options.evaluation.value}}</span>
+                <div layout flex="">
+                    <div flex="initial" layout layout-align="center center">
+                        <span flex style="min-width: 80px;">N = {{app.options.evaluation.value}}:&nbsp;</span>
                     </div>
                     <div flex layout layout-align="center center">
-                        <md-slider aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
+                        <md-slider class="md-primary md-hue-3" aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
                         </md-slider>
                     </div>
                 </div>
-                <div layout flex="25">
+                <div layout flex="">
                     <div flex layout layout-align="center center">
-                        <md-switch ng-model="app.options.singleWave" aria-label="Switch 1">
+                        <md-switch class="md-primary md-hue-3" ng-model="app.options.singleWave" aria-label="Switch 1">
                         Single Wave?
                         </md-switch>
                     </div>
                 </div>
-                <div layout flex="25">
+                <div layout flex="">
                     <div flex layout layout-align="center center">
-                        <md-switch ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
-                        Use Lanczos Sigma Factor?
+                        <md-switch class="md-primary md-hue-3" ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
+                        Use Lanczos &#963; Factor?
                         </md-switch>
                     </div>
                 </div>
-                <div layout flex="20">
-                    <div flex="20" layout layout-align="center center">
-                        <span flex>Rate:</span>
+                <div layout flex="">
+                    <div flex="initial" layout layout-align="center center">
+                        <span flex style="min-width: 120px;">Frequency:</span>
                     </div>
                     <div flex layout layout-align="center center">
-                        <md-slider aria-label="F number" flex min="60" max="12000" step="1" ng-model="app.options.rate">
+                        <md-slider aria-label="F number" flex min="3000" max="12000" step="1000" ng-model="app.options.rate" class="md-primary md-hue-3">
                         </md-slider>
                     </div>
                 </div>
             </div>
+            </md-toolbar>
             <div layout="row" layout-align="center center">
                 <div fourier-canvas=""></div>
             </div>
-            <div style="padding: 20px;">
-                P to pause, right arrow to step when paused, M to mute. Press the speaker in the upper right to hear the wave shown above in an audible frequency.<br> <a href="https://commons.wikimedia.org/wiki/File:Fourier_series_square_wave_circles_animation.gif#/media/File:Fourier_series_square_wave_circles_animation.gif" target="_blank">Original inspiration here</a>.
+            <div style="padding: 20px; float: right;">
+                 <a md-button href="https://commons.wikimedia.org/wiki/File:Fourier_series_square_wave_circles_animation.gif#/media/File:Fourier_series_square_wave_circles_animation.gif" target="_blank">Original inspiration here</a>
+                 <a md-button href="https://en.wikipedia.org/wiki/Fourier_series" target="_blank">More about Fourier Series</a>
+                 <a md-button href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createPeriodicWave" target="_blank">More about WebAudio Oscillator Waves</a>
+                 
             </div>
         </md-content>
         <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
@@ -125,6 +151,7 @@
                         },
                         useLanczosFactor: false,
                         rate: 6000,
+                        volume: .5,
                         wave: null,
                         singleWave: false
                     };
@@ -134,9 +161,11 @@
                         if($scope.options.evaluation.min == 1 && newWave.start == 2) {
                             $scope.options.evaluation.min = 2;
                             $scope.options.evaluation.value++;
+                            $scope.options.evaluation.max++;
                         } else if($scope.options.evaluation.min == 2 && newWave.start == 1) {
                             $scope.options.evaluation.min = 1;
                             $scope.options.evaluation.value--;
+                            $scope.options.evaluation.max--;
                         }
                     });
 
@@ -223,7 +252,7 @@
                             fourierFunction: basicFourierFunction,
                             fourierFunctionMax: basicFourierFunctionMax,
                             getAudioWaveCoefficients: function(f_pos) {
-                                var imag = ((f_pos  % 2) === 0)? basicFourierFunctionMax(f_pos): 0;
+                                var imag = ((f_pos  % 2) === 0)? -basicFourierFunctionMax(f_pos): 0;
                                 
                                 return [0, imag];
                             },
@@ -293,12 +322,23 @@
                             app.scope.status.visualizationPaused = !app.scope.status.visualizationPaused;
                         } else if(event.keyCode === 77) {
                             app.scope.status.audioPaused = !app.scope.status.audioPaused;
-                        } else if(app.status.visualizationPaused && event.keyCode == 39 ) {
+                        } else if(app.status.visualizationPaused && event.keyCode == 83 ) {
                             app.scope.status.step = true;
+                        } else if(event.keyCode == 39 ) {
+                            if(app.scope.options.evaluation.value + 2 <= app.scope.options.evaluation.max) {
+                                app.scope.options.evaluation.value+=2;
+                            }
+                        }  else if(event.keyCode == 37 ) {
+                            if(app.scope.options.evaluation.value - 2 >= app.scope.options.evaluation.min) {
+                                app.scope.options.evaluation.value-=2;
+                            }
                         }
                         app.scope.$digest();
                     });
-           
+                    
+                    // var query = elm[0].querySelector.bind(elm[0]);
+                    
+                    // query()
                 }
             })
             .directive('dragUpdate', function() {
@@ -351,6 +391,8 @@
                     var WIDTH = 400;
                     var PADDING = 40;
                     
+                    var bgColor = '#E0F2F1';
+                    
                     var canvasElm = elm[0].querySelector('canvas');
 
                     /**
@@ -365,9 +407,9 @@
 
                     
 
-                    var TOP = 85;
+                    var TOP = 100;
 
-                    var colors = ['#EF476F', '#605B56', '#FFD166', '#06D6A0', '#712F79'];
+                    var colors = ['#F44336', '#424242', '#FF9800', '#4CAF50', '#795548', '#2196F3', '#673AB7'];
 
                     var fourierFunction = fourierApp.options.wave.fourierFunction,
                         fourierFunctionMax = fourierApp.options.wave.fourierFunctionMax;
@@ -408,12 +450,12 @@
 
 
                     var ac = new AudioContext();
-                    var osc = ac.createOscillator();
-                    osc.frequency.value = 220;
+                    var oscStub = {frequency: {value: 0}, stop: function() {}, setPeriodicWave: function() {}};
+                    osc = oscStub;
                     
                     var gainNode = ac.createGain();
                     
-                    gainNode.gain.value = 1;
+                    gainNode.gain.value = fourierApp.options.volume;
 
                     function updateAudioWaveTable(f_value) {
                         var parts = [new Float32Array(200), new Float32Array(200)];
@@ -421,11 +463,11 @@
                         
                         if(fourierApp.options.singleWave) {
                             result = fourierApp.options.wave.getAudioWaveCoefficients(f_value);
-                            gainNode.gain.value = result[1] / fourierApp.options.wave.getAudioWaveCoefficients(fourierApp.options.wave.start)[1];
+                            gainNode.gain.value = fourierApp.options.volume * (result[1] / fourierApp.options.wave.getAudioWaveCoefficients(fourierApp.options.wave.start)[1]);
                             parts[0][f_value] = result[0];
                             parts[1][f_value] = result[1];
                         } else {
-                            gainNode.gain.value = 1;
+                            gainNode.gain.value = fourierApp.options.volume;
                             var f_pos = 0;
                             do {
                                 result = fourierApp.options.wave.getAudioWaveCoefficients(f_pos);
@@ -440,19 +482,32 @@
                     }
 
 
-                    fourierApp.scope.$watch('status.audioPaused', function(newVal, oldVal) {
+                    fourierApp.scope.$watch('status', function(newVal, oldVal) {
                         if(newVal === oldVal) return;
                         
-                        if(!newVal) {
+                        if(!newVal.visualizationPaused && !newVal.audioPaused) {
                             osc = ac.createOscillator();
-                            osc.frequency.value = 220;
+                            osc.frequency.value = 220 * (6000 / fourierApp.options.rate);
                             osc.connect(gainNode);
                             gainNode.connect(ac.destination);
                             updateAudioWaveTable(prevFValue);
                             osc.start();
                         } else {
                             osc.stop();
+                            
+                            // stub out the oscilator
+                            osc = oscStub;
                         }
+                    }, true);
+                    
+                    fourierApp.scope.$watch('options.volume', function(newVal, oldVal) {
+                        if(newVal === oldVal) return;
+                        
+                        updateAudioWaveTable(f_value);
+                    });
+                    fourierApp.scope.$watch('options.rate', function(newVal, oldVal) {
+                        if(newVal === oldVal) return;
+                        osc.frequency.value = 220 * (6000 / fourierApp.options.rate);
                     });
                     
                     
@@ -704,7 +759,7 @@
                         }
                         
                         ctx.globalCompositeOperation = 'destination-over';
-                        ctx.clearRect(0,0,1200,600); // clear canvas
+                        ctx.clearRect(0,0,1200,600);
                        
                         
                         f_value = fourierApp.options.evaluation.value;
@@ -740,22 +795,6 @@
                         ctx.strokeStyle = "#00000";
                         ctx.strokeRect(LEFT, TOP- PADDING, WIDTH, 2*HEIGHT + 2*PADDING);
                         
-
-                        ctx.strokeStyle = "#888";
-                        ctx.beginPath();
-                        for(var i = 0; i < positionsCount - 1; i++) {
-                            x1 = x(i);
-                            x2 = x(i + 1);
-                            
-                            y1 = y(actualWave[i]);
-                            y2 = y(actualWave[i + 1]);
-                            ctx.moveTo(x1, y1);
-                            ctx.lineTo(x2, y2);
-                            
-                        }
-                        ctx.stroke();
-                        ctx.setLineDash([]);
-                        
                         ctx.strokeStyle = "#000000";
                         ctx.lineWidth = 2;
                         ctx.beginPath();
@@ -776,6 +815,23 @@
                         
                         ctx.stroke();
                         ctx.lineWidth = 1;
+                        
+
+                        ctx.strokeStyle = "#555";
+                        ctx.beginPath();
+                        for(var i = 0; i < positionsCount - 1; i++) {
+                            x1 = x(i);
+                            x2 = x(i + 1);
+                            
+                            y1 = y(actualWave[i]);
+                            y2 = y(actualWave[i + 1]);
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                            
+                        }
+                        ctx.stroke();
+                        
+                        
                         
                         drawComponents(positions, theta);
                         
@@ -799,6 +855,9 @@
                         ctx.fillText(yVal.toFixed(2), LEFT - 5, yPos - 5);
                         
                         drawArrow(LEFT, yPos, 7, 2, "#000");
+                        
+                        ctx.fillStyle = '#E0F2F1';
+                        ctx.fillRect(0,0,1200,600);
                         
                         frametimes.push(performance.now() -t1);
                         requestAnimationFrame(update);
