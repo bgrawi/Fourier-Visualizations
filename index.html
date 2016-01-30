@@ -26,7 +26,7 @@
                     <md-button ng-click="app.status.visualizationPaused = !app.status.visualizationPaused" class="md-icon-button" aria-label="PlayPause">
                         <md-icon>{{!app.status.visualizationPaused? 'pause':'play_arrow'}}</md-icon>
                         <md-tooltip md-direction="left">
-                        {{!app.status.visualizationPaused? 'Pause the visualization':'Play the visualization'}} [P]
+                        {{!app.status.visualizationPaused? 'Pause the visualization':'Play the visualization'}} [SPACE]
                         </md-tooltip>
                     </md-button>
                     <md-button ng-disabled="!app.status.visualizationPaused" ng-mousedown="app.status.step = true" class="md-icon-button" aria-label="Next">
@@ -38,7 +38,7 @@
                     <md-button ng-click="app.status.audioPaused = !app.status.audioPaused" class="md-icon-button" aria-label="Mute" id="playpause">
                          <md-icon>{{app.status.audioPaused? 'volume_off': 'volume_up'}}</md-icon>
                          <md-tooltip>
-                        {{app.status.audioPaused? 'Hear the wave at a base frequency of 220hz':'Mute the wave'}} [M]
+                        {{app.status.audioPaused? 'Hear the wave at a base frequency of 220hz':'Mute'}} [M]
                         </md-tooltip>
                     </md-button>
                     <div layout flex="10">
@@ -57,13 +57,20 @@
                                 <md-option ng-repeat="wave in app.waves" ng-value="wave">
                                 {{wave.name}}
                                 </md-option>
+                                <md-tooltip>
+                                Change the waveform being approximated
+                                </md-tooltip>
                             </md-select>
                         </md-input-container>
                     </div>
                 </div>
                 <div layout flex="">
                     <div flex="initial" layout layout-align="center center">
-                        <span flex style="min-width: 80px;">N = {{app.options.evaluation.value}}:&nbsp;</span>
+                        <span flex style="min-width: 80px;cursor:pointer;">N = {{app.options.evaluation.value}}:&nbsp;
+                            <md-tooltip>
+                            Set the series's maximum evalutation number 
+                            </md-tooltip>
+                        </span>
                     </div>
                     <div flex layout layout-align="center center">
                         <md-slider class="md-primary md-hue-3" aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
@@ -73,7 +80,10 @@
                 <div layout flex="">
                     <div flex layout layout-align="center center">
                         <md-switch class="md-primary md-hue-3" ng-model="app.options.singleWave" aria-label="Switch 1">
-                        Single Wave?
+                            Single Wave?
+                            <md-tooltip>
+                            Only show/hear the latest term in the series 
+                            </md-tooltip>
                         </md-switch>
                     </div>
                 </div>
@@ -81,12 +91,19 @@
                     <div flex layout layout-align="center center">
                         <md-switch class="md-primary md-hue-3" ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
                         Use Lanczos &#963; Factor?
+                            <md-tooltip>
+                                Reduce the Gibbs Phenomenon (over/under-shooting at discontunities)
+                            </md-tooltip>
                         </md-switch>
                     </div>
                 </div>
                 <div layout flex="">
                     <div flex="initial" layout layout-align="center center">
-                        <span flex style="min-width: 120px;">Frequency:</span>
+                        <span flex style="min-width: 80px;cursor:pointer;">Period:
+                            <md-tooltip>
+                                Change how long the wave is and what tone it produces
+                            </md-tooltip>
+                        </span>
                     </div>
                     <div flex layout layout-align="center center">
                         <md-slider aria-label="F number" flex min="3000" max="12000" step="1000" ng-model="app.options.rate" class="md-primary md-hue-3">
@@ -98,10 +115,11 @@
             <div layout="row" layout-align="center center">
                 <div fourier-canvas=""></div>
             </div>
-            <div style="padding: 20px; float: right;">
-                 <a md-button href="https://commons.wikimedia.org/wiki/File:Fourier_series_square_wave_circles_animation.gif#/media/File:Fourier_series_square_wave_circles_animation.gif" target="_blank">Original inspiration here</a>
-                 <a md-button href="https://en.wikipedia.org/wiki/Fourier_series" target="_blank">More about Fourier Series</a>
-                 <a md-button href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createPeriodicWave" target="_blank">More about WebAudio Oscillator Waves</a>
+            <div style="padding: 20px; text-align: center;">
+                 <a md-button href="https://commons.wikimedia.org/wiki/File:Fourier_series_square_wave_circles_animation.gif#/media/File:Fourier_series_square_wave_circles_animation.gif" target="_blank">Original inspiration</a>
+                 <a md-button href="https://en.wikipedia.org/wiki/Fourier_series" target="_blank">More about Fourier series</a>
+                 <a md-button href="https://en.wikipedia.org/wiki/Gibbs_phenomenon" target="_blank">More about the Gibbs Phenomenon</a>
+                 <a md-button href="https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createPeriodicWave" target="_blank">More about generating the audio</a>
                  
             </div>
         </md-content>
@@ -318,7 +336,7 @@
                 function FourierAppLink(scope, elm, attrs, app) {
                     
                     document.addEventListener("keydown", function(event) {
-                        if(event.keyCode === 80) {
+                        if(event.keyCode === 32) {
                             app.scope.status.visualizationPaused = !app.scope.status.visualizationPaused;
                         } else if(event.keyCode === 77) {
                             app.scope.status.audioPaused = !app.scope.status.audioPaused;
