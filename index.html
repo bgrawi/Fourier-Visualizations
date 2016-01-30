@@ -41,46 +41,72 @@
                         {{app.status.audioPaused? 'Hear the wave at a base frequency of 220hz':'Mute'}} [M]
                         </md-tooltip>
                     </md-button>
-                    <div layout flex="10">
+                    <div layout flex="10" flex-gt-md="20">
                         <md-slider class="md-primary md-hue-3" aria-label="Volume" flex min="0" max="1" step="0.01" ng-model="app.options.volume" ng-disabled="app.status.audioPaused">
                         </md-slider>
                     </div>
                 </div>
             </md-toolbar>
-            <md-toolbar class="md-primary md-hue-2">
-            <div layout layout-margin layout-padding layout-align="center stretch">
-                <div layout flex="">
-                    <div flex layout layout-align="center center">
-                        <md-input-container class="md-primary md-hue-3">
-                            <label style="color: rgba(255, 255, 255, .87);">Waveform</label>
-                            <md-select class="md-primary md-hue-3" ng-model="app.options.wave">
-                                <md-option ng-repeat="wave in app.waves" ng-value="wave">
-                                {{wave.name}}
-                                </md-option>
-                                <md-tooltip>
-                                Change the waveform being approximated
-                                </md-tooltip>
-                            </md-select>
-                        </md-input-container>
+            <md-toolbar class="md-primary md-hue-2" style="padding: 25px;">
+            <div layout layout-align="center stretch">
+                <div layout flex="20">
+                    <div flex="initial" layout layout-align="center center">
+                        <span flex>Waveform:
+                            <md-tooltip md-direction="right">
+                            Change the waveform being approximated
+                            </md-tooltip>
+                        </span>
+                    </div>
+                    <div flex layout layout-margin layout-align="center center">      
+                        <md-select class="md-primary md-hue-3" ng-model="app.options.wave" aria-label="Waveform">
+                            <md-option ng-repeat="wave in app.waves" ng-value="wave">
+                            {{wave.name}}
+                            </md-option>
+                        </md-select>
                     </div>
                 </div>
                 <div layout flex="">
                     <div flex="initial" layout layout-align="center center">
                         <span flex style="min-width: 80px;cursor:pointer;">N = {{app.options.evaluation.value}}:&nbsp;
                             <md-tooltip>
-                            Set the series's maximum evalutation number 
+                            Set the series's maximum evalutation number [LEFT/RIGHT]
                             </md-tooltip>
                         </span>
                     </div>
-                    <div flex layout layout-align="center center">
-                        <md-slider class="md-primary md-hue-3" aria-label="F number" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
+                    <div flex layout layout-margin layout-align="center center">
+                        <md-slider class="md-primary md-hue-3" aria-label="N" flex min="{{app.options.evaluation.min}}" max="{{app.options.evaluation.max}}" step="{{app.options.evaluation.step}}" ng-model="app.options.evaluation.value">
                         </md-slider>
+                    </div>
+                </div>
+                <div layout flex="">
+                    <div flex="initial" layout layout-align="center center">
+                        <span flex style="min-width: 80px;cursor:pointer;">&nbsp;Period:
+                            <md-tooltip>
+                                Change how long the wave is and what tone it produces
+                            </md-tooltip>
+                        </span>
+                    </div>
+                    <div flex layout layout-margin layout-align="center center">
+                        <md-slider aria-label="Frequency" flex min="3000" max="12000" step="1000" ng-model="app.options.rate" class="md-primary md-hue-3">
+                        </md-slider>
+                    </div>
+                </div>
+            </div>
+            <div layout layout-align="center stretch">
+                <div layout flex="">
+                    <div flex layout layout-align="center center">
+                        <md-switch class="md-primary md-hue-3" ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
+                        Use Lanczos &#963; Factor
+                            <md-tooltip>
+                                Reduce the Gibbs Phenomenon (over/under-shooting at discontunities)
+                            </md-tooltip>
+                        </md-switch>
                     </div>
                 </div>
                 <div layout flex="">
                     <div flex layout layout-align="center center">
                         <md-switch class="md-primary md-hue-3" ng-model="app.options.singleWave" aria-label="Switch 1">
-                            Single Wave?
+                            Term {{app.options.evaluation.value}} Only
                             <md-tooltip>
                             Only show/hear the latest term in the series 
                             </md-tooltip>
@@ -89,25 +115,12 @@
                 </div>
                 <div layout flex="">
                     <div flex layout layout-align="center center">
-                        <md-switch class="md-primary md-hue-3" ng-model="app.options.useLanczosFactor" aria-label="Switch 1">
-                        Use Lanczos &#963; Factor?
+                        <md-switch class="md-primary md-hue-3" ng-model="app.options.overlayComponents" aria-label="Switch 1">
+                            Overlay Components
                             <md-tooltip>
-                                Reduce the Gibbs Phenomenon (over/under-shooting at discontunities)
+                            Show every wave being added together
                             </md-tooltip>
                         </md-switch>
-                    </div>
-                </div>
-                <div layout flex="">
-                    <div flex="initial" layout layout-align="center center">
-                        <span flex style="min-width: 80px;cursor:pointer;">Period:
-                            <md-tooltip>
-                                Change how long the wave is and what tone it produces
-                            </md-tooltip>
-                        </span>
-                    </div>
-                    <div flex layout layout-align="center center">
-                        <md-slider aria-label="F number" flex min="3000" max="12000" step="1000" ng-model="app.options.rate" class="md-primary md-hue-3">
-                        </md-slider>
                     </div>
                 </div>
             </div>
@@ -171,7 +184,8 @@
                         rate: 6000,
                         volume: .5,
                         wave: null,
-                        singleWave: false
+                        singleWave: false,
+                        overlayComponents: false
                     };
                     $scope.options = this.options;
                     
@@ -813,26 +827,28 @@
                         ctx.strokeStyle = "#00000";
                         ctx.strokeRect(LEFT, TOP- PADDING, WIDTH, 2*HEIGHT + 2*PADDING);
                         
-                        ctx.strokeStyle = "#000000";
-                        ctx.lineWidth = 2;
-                        ctx.beginPath();
                         
-                        for(var i = 0; i < positionsCount - 1; i++) {
-                            x1 = x(i);
-                            x2 = x(i + 1);
-                            if(!fourierApp.options.singleWave) {
-                                y1 = y(positions[i].total);
-                                y2 = y(positions[i + 1].total);
-                            } else {
-                                y1 = y(positions[i].components[f_value]);
-                                y2 = y(positions[i + 1].components[f_value]);
+                        if(fourierApp.options.overlayComponents) {
+                            for(var num = fourierApp.options.wave.start; num <= f_value; num+=2) {
+                                
+                                ctx.strokeStyle = colors[num % colors.length];
+                                ctx.globalAlpha = .3;
+                                ctx.lineWidth = 1;
+                                ctx.beginPath();
+                                for(var i = 0; i < positionsCount - 1; i++) {
+                                    x1 = x(i);
+                                    x2 = x(i + 1);
+                                    y1 = y(positions[i].components[num]);
+                                    y2 = y(positions[i + 1].components[num]);
+                                    ctx.moveTo(x1, y1);
+                                    ctx.lineTo(x2, y2);
+                                }
+                                ctx.stroke();
+                                ctx.globalAlpha = 1;
                             }
-                            ctx.moveTo(x1, y1);
-                            ctx.lineTo(x2, y2);
                         }
                         
-                        ctx.stroke();
-                        ctx.lineWidth = 1;
+                        
                         
 
                         ctx.strokeStyle = "#555";
@@ -848,6 +864,25 @@
                             
                         }
                         ctx.stroke();
+                        
+                        ctx.strokeStyle = "#000000";
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        for(var i = 0; i < positionsCount - 1; i++) {
+                            x1 = x(i);
+                            x2 = x(i + 1);
+                            if(!fourierApp.options.singleWave) {
+                                y1 = y(positions[i].total);
+                                y2 = y(positions[i + 1].total);
+                            } else {
+                                y1 = y(positions[i].components[f_value]);
+                                y2 = y(positions[i + 1].components[f_value]);
+                            }
+                            ctx.moveTo(x1, y1);
+                            ctx.lineTo(x2, y2);
+                        }
+                        ctx.stroke();
+                        ctx.lineWidth = 1;
                         
                         
                         
