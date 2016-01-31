@@ -1,10 +1,7 @@
-# Fourier-Visualizations
-Visualizing Fourier series approximations of waves and how they relate to digital oscillators producing sound.
-
-See and hear it here: http://bgrawi.com/Fourier-Visualizations/
+# [Fourier-Visualizations](http://bgrawi.com/Fourier-Visualizations/)
+An HTML5 canvas visualization of how Fourier series, or adding smaller and faster sin waves together, can approximate any peroidic wave that you can then hear directly. These visualizations provide the foundation for oscillators used in most music synthesizers. The visualization shows each sin wave as a circle being added to the previous sin wave's value. It color codes them so that the equation, component, and circle can be easily recognized. By using the WebAudio api, these waves can be heard indivdually or all together by directly using the math shown. Since we can't hear sound waves of 1-2hz, the audio frequency is instead based at 220hz, but the actual sound wave is still exactly what is shown (save for normalization of the > 1 values). 
 
 ## Tips and things to try
-
 * Adjust your volume then click on the speaker in the top right to hear the wave @ 220hz
 * Try sliding the n slider or use your arrow keys to change how many terms there are
 * Select the middle silder to hear only one term at a time, then toggle it back to hear that one frequency help form the overall wave
@@ -12,8 +9,9 @@ See and hear it here: http://bgrawi.com/Fourier-Visualizations/
 * Listen to how the ringing goes away when the Lanczos sigma factor is added and notice how the wave is actually louder
 
 ## To do
+* Add a modal when the page starts urging the user to turn on the audio portion of the visualization and providing the above tips as well
 * Refactor out into separte files for better management
-* Explore other waveforms
+* Explore other waveforms, maybe custom ones with FFT
 * Show the actual audio output oscilloscope complete with normalization and zooming
 
 ## MIT License
