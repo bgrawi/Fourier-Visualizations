@@ -146,12 +146,6 @@
         
         <!-- Your application bootstrap  -->
         <script type="text/javascript"> 
-        var frametimes = [];  
-        frametimes.result = () => {
-            var result = frametimes.reduce( (prev, curr) => prev + curr ) / frametimes.length;
-            frametimes.length = 0; 
-            return result;
-        };   
             /**
              * You must include the dependency on 'ngMaterial' 
              */
@@ -780,7 +774,6 @@
                     var time = 0;
                          
                     function update() {
-                        var t1 = performance.now();
                         
                         if(fourierApp.status.visualizationPaused && !fourierApp.status.step) {
                             return;
@@ -911,8 +904,7 @@
                         
                         ctx.fillStyle = '#E0F2F1';
                         ctx.fillRect(0,0,1200,600);
-                        
-                        frametimes.push(performance.now() -t1);
+                       
                         requestAnimationFrame(update);
                     }
                     update();
