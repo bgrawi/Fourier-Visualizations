@@ -9,7 +9,6 @@ An HTML5 canvas visualization of how Fourier series, or adding smaller and faste
 * Listen to how the ringing goes away when the Lanczos sigma factor is added and notice how the wave is actually louder
 
 ## To do
-* Add a modal when the page starts urging the user to turn on the audio portion of the visualization and providing the above tips as well
 * Refactor out into separte files for better management
 * Explore other waveforms, maybe custom ones with FFT
 * Show the actual audio output oscilloscope complete with normalization and zooming

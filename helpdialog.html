@@ -1,0 +1,41 @@
+<md-dialog aria-label="Mango (Fruit)"  ng-cloak>
+  <form>
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2>Tips & things to try</h2>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="cancel()">
+          <md-icon aria-label="Close dialog">close</md-icon>
+        </md-button>
+      </div>
+    </md-toolbar>
+    <md-dialog-content>
+      <div class="md-dialog-content">
+          <strong>Note: Works best in Google Chrome &amp; MS Edge, Safari does not support WebAudio fully yet.</strong><br>
+        <ul>
+            <li>Adjust your volume then click on the speaker in the top right to hear the wave @ 220hz</li>
+            <li>Try sliding the n slider or use your arrow keys to change how many terms there are</li>
+            <li>Select the middle switch to hear only one term at a time, then toggle it back to hear that one frequency help form the overall wave</li>
+            <li>Try pausing the simulation, then stepping with the S key (or the button) when theta is 0 or pi.</li>
+            <li>Listen to how the ringing goes away when the Lanczos sigma factor is added and notice how the wave is actually louder</li>
+            <li>Turn on the overlay components feature to see all of the waves being added together</li>
+            <li>Try comparing what the equations look like between the different waves</li>
+            <li>Adjust the period of the wave to compare the sounds the Square and Sawtooth wave make</li>
+        </ul>
+        <em> You can open this tips window at any time by pressing the question mark in the upper right hand corner</em>
+      </div>
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+      <md-button href="http://bgrawi.com" target="_blank">
+        By Ben Grawi
+      </md-button>
+      <md-button href="https://github.com/bgrawi/Fourier-Visualizations" target="_blank">
+        Github Project
+      </md-button>
+      <span flex></span>
+      <md-button ng-click="answer()" style="margin-right:20px;" md-autofocus>
+        OK
+      </md-button>
+    </md-dialog-actions>
+  </form>
+</md-dialog>

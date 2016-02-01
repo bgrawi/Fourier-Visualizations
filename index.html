@@ -45,6 +45,12 @@
                         <md-slider class="md-primary md-hue-3" aria-label="Volume" flex min="0" max="1" step="0.01" ng-model="app.options.volume" ng-disabled="app.status.audioPaused">
                         </md-slider>
                     </div>
+                    <md-button ng-click="showHelpModal()" class="md-icon-button" aria-label="Help">
+                        <md-icon>help</md-icon>
+                        <md-tooltip md-direction="left">
+                        Show the help modal
+                        </md-tooltip>
+                    </md-button>
                 </div>
             </md-toolbar>
             <md-toolbar class="md-primary md-hue-2" style="padding: 25px;">
@@ -166,7 +172,7 @@
                 };
                 
                 
-                function FourierAppCtrl($scope) {
+                function FourierAppCtrl($scope, $mdDialog, $mdMedia) {
                     
                     this.options = {
                         evaluation: {
@@ -338,6 +344,41 @@
                         audioPaused: true
                     };
                     $scope.status = this.status;
+                    
+                    function HelpDialogController($scope, $mdDialog) {
+                        $scope.hide = function() {
+                            $mdDialog.hide();
+                        };
+                        $scope.cancel = function() {
+                            $mdDialog.cancel();
+                        };
+                        $scope.answer = function(answer) {
+                            $mdDialog.hide(answer);
+                        };
+                    }
+                    
+                    $scope.customFullscreen = $mdMedia('xs') || $mdMedia('sm');
+                    $scope.showHelpModal = function() {
+                        var useFullScreen = ($mdMedia('sm') || $mdMedia('xs'))  && $scope.customFullscreen;
+                        $mdDialog.show({
+                            controller: HelpDialogController,
+                            templateUrl: 'helpdialog.html',
+                            parent: angular.element(document.body),
+                            clickOutsideToClose:true,
+                            fullscreen: useFullScreen
+                        });
+                        $scope.$watch(function() {
+                            return $mdMedia('xs') || $mdMedia('sm');
+                        }, function(wantsFullScreen) {
+                            $scope.customFullscreen = (wantsFullScreen === true);
+                        });
+                    };
+                    
+                    var showHelpModal = localStorage.getItem('showedHelpModal') !== 'true';
+                    if(showHelpModal) {
+                        localStorage.setItem('showedHelpModal', 'true');
+                        $scope.showHelpModal();
+                    }
                     
                     this.scope = $scope;
                 }
